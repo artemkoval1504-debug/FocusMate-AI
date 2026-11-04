@@ -203,7 +203,7 @@ function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, err
         <button
           onClick={onStart}
           disabled={loading}
-          className="rounded-xl bg-orange-500 px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-orange-400 active:scale-[0.98] disabled:opacity-50"
+          className="rounded-xl bg-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-[0.98] disabled:opacity-50"
         >
           {loading ? 'Генерую крок…' : '⚡ Запустити режим Do Now'}
         </button>
@@ -297,7 +297,7 @@ function FocusState({ step, stepNumber, totalSteps, timer, onDone, onReset, load
       <button
         onClick={onDone}
         disabled={loading}
-        className="mt-8 rounded-xl bg-green-600 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-green-500 active:scale-[0.98] disabled:opacity-50"
+        className="mt-8 rounded-xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-[0.98] disabled:opacity-50"
       >
         {loading ? 'Генерую…' : stepNumber < totalSteps ? '✅ Зроблено! Наступний крок' : '✅ Завершити'}
       </button>
@@ -326,7 +326,7 @@ function DoneState({ onReset }: { onReset: () => void }) {
       </p>
       <button
         onClick={onReset}
-        className="mt-8 rounded-xl bg-orange-500 px-6 py-3.5 font-bold text-white transition hover:bg-orange-400 active:scale-[0.98]"
+        className="mt-8 rounded-xl bg-blue-600 px-6 py-3.5 font-bold text-white transition hover:bg-blue-500 active:scale-[0.98]"
       >
         Нове завдання
       </button>

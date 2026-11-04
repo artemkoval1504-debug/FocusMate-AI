@@ -53,7 +53,7 @@ export function ApiKeyModal({ onClose }: Props) {
         <div className="mt-5 flex gap-3">
           <button
             onClick={handleSave}
-            className="flex-1 rounded-lg bg-orange-500 px-4 py-2.5 font-semibold text-white transition hover:bg-orange-400 active:scale-[0.98]"
+            className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-500 active:scale-[0.98]"
           >
             {saved ? 'Збережено ✓' : 'Зберегти'}
           </button>
