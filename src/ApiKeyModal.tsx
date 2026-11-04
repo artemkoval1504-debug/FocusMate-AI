@@ -47,7 +47,7 @@ export function ApiKeyModal({ onClose }: Props) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="sk-or-v1-..."
-          className="mt-4 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-orange-500/60"
+          className="mt-4 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-blue-500/60"
         />
 
         <div className="mt-5 flex gap-3">

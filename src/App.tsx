@@ -92,9 +92,9 @@ export default function App() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 sm:px-10">
         <div className="flex items-center gap-2">
-          <span className="text-orange-500 text-2xl font-black">⚡</span>
+          <span className="text-blue-500 text-2xl font-black">⚡</span>
           <span className="font-extrabold tracking-tight text-lg sm:text-xl">
-            FocusMate <span className="text-orange-500">AI</span>
+            FocusMate <span className="text-blue-500">AI</span>
           </span>
           <span className="ml-2 hidden rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-slate-400 sm:inline">
             Режим Do Now
@@ -164,7 +164,7 @@ function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, err
   return (
     <div className="animate-fadeIn">
       <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">
-        Синдром чистого аркуша лікується <span className="text-orange-500">однією дією</span> на 15 хвилин.
+        Синдром чистого аркуша лікується <span className="text-blue-500">однією дією</span> на 15 хвилин.
       </h1>
       <p className="mt-3 text-slate-400">Встав завдання сюди — отримаєш лише перший крок.</p>
 
@@ -173,7 +173,7 @@ function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, err
         onChange={(e) => setTask(e.target.value)}
         placeholder="Встав складне завдання, довге ТЗ або напиши тему, яка тебе лякає…"
         rows={5}
-        className="mt-6 w-full resize-none rounded-xl border border-white/10 bg-black/30 p-4 text-white placeholder-slate-600 outline-none transition focus:border-orange-500/50"
+        className="mt-6 w-full resize-none rounded-xl border border-white/10 bg-black/30 p-4 text-white placeholder-slate-600 outline-none transition focus:border-blue-500/50"
       />
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -184,7 +184,7 @@ function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, err
             onClick={() => setDuration(d)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
               duration === d
-                ? 'bg-orange-500 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'border border-white/10 text-slate-400 hover:bg-white/5'
             }`}
           >
@@ -246,7 +246,7 @@ function FocusState({ step, stepNumber, totalSteps, timer, onDone, onReset, load
               i < stepNumber - 1
                 ? 'w-6 bg-green-500'
                 : i === stepNumber - 1
-                  ? 'w-10 bg-orange-500'
+                  ? 'w-10 bg-blue-600'
                   : 'w-6 bg-white/10'
             }`}
           />
@@ -266,7 +266,7 @@ function FocusState({ step, stepNumber, totalSteps, timer, onDone, onReset, load
             cy="140"
             r={radius}
             fill="none"
-            stroke="#f97316"
+            stroke="#2563eb"
             strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -275,7 +275,7 @@ function FocusState({ step, stepNumber, totalSteps, timer, onDone, onReset, load
           />
         </svg>
         <div className="flex flex-col items-center">
-          <span className={`text-5xl font-black tabular-nums ${timer.finished ? 'text-green-400' : 'text-orange-500'}`}>
+          <span className={`text-5xl font-black tabular-nums ${timer.finished ? 'text-green-400' : 'text-blue-500'}`}>
             {timer.display}
           </span>
           <button
