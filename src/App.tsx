@@ -3,6 +3,8 @@ import type { AppState, FocusDuration, FocusStep } from './types';
 import { DEMO_TASK, TOTAL_STEPS } from './types';
 import { generateStep, getApiKey } from './stepGenerator';
 import { ApiKeyModal } from './ApiKeyModal';
+import { PhotoUpload } from './PhotoUpload';
+import { downloadSessionReport } from './sessionReport';
 import { useCountdown } from './useCountdown';
 
 export default function App() {
@@ -15,12 +17,14 @@ export default function App() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showApiModal, setShowApiModal] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(!!getApiKey());
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [screenTime, setScreenTime] = useState('');
 
   const timer = useCountdown(duration);
 
   const handleStart = async () => {
-    if (!task.trim()) {
-      setError('Встав хоча б одне речення із завданням, щоб AI міг виділити перший крок.');
+    if (!task.trim() && photos.length === 0) {
+      setError('Встав хоча б одне речення із завданням або завантаж фото, щоб AI міг виділити перший крок.');
       return;
     }
     setError(null);
@@ -29,7 +33,12 @@ export default function App() {
     setCurrentStepIndex(0);
 
     try {
-      const step = await generateStep({ task: task.trim(), stepIndex: 0, previousSteps: [] });
+      const step = await generateStep({
+        task: task.trim() || 'Завдання, описане фото',
+        stepIndex: 0,
+        previousSteps: [],
+        photo: photos[0],
+      });
       setSteps([step]);
       setState('focus');
       timer.reset();
@@ -51,7 +60,7 @@ export default function App() {
     setLoading(true);
     try {
       const step = await generateStep({
-        task: task.trim(),
+        task: task.trim() || 'Завдання, описане фото',
         stepIndex: nextIndex,
         previousSteps: steps,
       });
@@ -75,6 +84,8 @@ export default function App() {
     setState('empty');
     setSteps([]);
     setCurrentStepIndex(0);
+    setPhotos([]);
+    setScreenTime('');
     timer.pause();
     timer.reset();
     setError(null);
@@ -83,6 +94,10 @@ export default function App() {
   const handleApiSaved = () => {
     setShowApiModal(false);
     setHasApiKey(!!getApiKey());
+  };
+
+  const handleDownloadReport = () => {
+    downloadSessionReport({ task, steps, duration, screenTime });
   };
 
   const currentStep = steps[currentStepIndex];
@@ -126,6 +141,10 @@ export default function App() {
             onDemo={handleDemo}
             error={error}
             loading={loading}
+            photos={photos}
+            onPhotosChange={setPhotos}
+            screenTime={screenTime}
+            onScreenTimeChange={setScreenTime}
           />
         )}
 
@@ -141,13 +160,30 @@ export default function App() {
           />
         )}
 
-        {state === 'done' && <DoneState onReset={handleReset} />}
+        {state === 'done' && (
+          <DoneState
+            task={task}
+            steps={steps}
+            duration={duration}
+            screenTime={screenTime}
+            onReset={handleReset}
+            onDownload={handleDownloadReport}
+          />
+        )}
       </main>
     </div>
   );
 }
 
 /* ---------------- Empty State ---------------- */
+
+const SCREEN_TIPS = [
+  'Увімкни «режим сірий» на телефоні — він знижує заохочення до прокрутки.',
+  'Використай вбудований тайтмер додатків: Screen Time (iOS) або Digital Wellbeing (Android).',
+  'Приберіть телефон і комп’ютер із місць сну та їжі — створіть «зони без екрану».',
+  'Перед фокус-сеансом вимкни зв’язок або постав «Не турити» для браузера.',
+  'Поради: 25 хв фокусу → 5 хв перерви, тоді використовуй телефон на перерві.',
+];
 
 interface EmptyProps {
   task: string;
@@ -158,9 +194,29 @@ interface EmptyProps {
   onDemo: () => void;
   error: string | null;
   loading: boolean;
+  photos: string[];
+  onPhotosChange: (photos: string[]) => void;
+  screenTime: string;
+  onScreenTimeChange: (v: string) => void;
 }
 
-function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, error, loading }: EmptyProps) {
+function EmptyState({
+  task,
+  setTask,
+  duration,
+  setDuration,
+  onStart,
+  onDemo,
+  error,
+  loading,
+  photos,
+  onPhotosChange,
+  screenTime,
+  onScreenTimeChange,
+}: EmptyProps) {
+  const screenMinutes = parseInt(screenTime, 10);
+  const hasHighScreenTime = !Number.isNaN(screenMinutes) && screenMinutes >= 120;
+
   return (
     <div className="animate-fadeIn">
       <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">
@@ -175,6 +231,8 @@ function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, err
         rows={5}
         className="mt-6 w-full resize-none rounded-xl border border-white/10 bg-black/30 p-4 text-white placeholder-slate-600 outline-none transition focus:border-blue-500/50"
       />
+
+      <PhotoUpload photos={photos} onChange={onPhotosChange} />
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <span className="text-sm text-slate-500">Час першого фокусу:</span>
@@ -192,6 +250,34 @@ function EmptyState({ task, setTask, duration, setDuration, onStart, onDemo, err
           </button>
         ))}
       </div>
+
+      <div className="mt-6">
+        <label htmlFor="screen-time" className="text-sm text-slate-400">
+          Скільки ти займаєш часу на телефоні або комп’ютері? (у хвилинах на день)
+        </label>
+        <input
+          id="screen-time"
+          type="number"
+          min={0}
+          value={screenTime}
+          onChange={(e) => onScreenTimeChange(e.target.value)}
+          placeholder="Напр. 150"
+          className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder-slate-600 outline-none transition focus:border-blue-500/50"
+        />
+      </div>
+
+      {hasHighScreenTime && (
+        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-300">
+            Твоє екранне час — {screenTime} хвилин на день. Це багато 📵
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-200/90">
+            {SCREEN_TIPS.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {error && (
         <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -314,7 +400,16 @@ function FocusState({ step, stepNumber, totalSteps, timer, onDone, onReset, load
 
 /* ---------------- Done State ---------------- */
 
-function DoneState({ onReset }: { onReset: () => void }) {
+interface DoneProps {
+  task: string;
+  steps: FocusStep[];
+  duration: FocusDuration;
+  screenTime: string;
+  onReset: () => void;
+  onDownload: () => void;
+}
+
+function DoneState({ task, steps, duration, screenTime, onReset, onDownload }: DoneProps) {
   return (
     <div className="animate-fadeIn flex flex-col items-center text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/15 text-4xl">
@@ -324,9 +419,38 @@ function DoneState({ onReset }: { onReset: () => void }) {
       <p className="mt-3 max-w-md text-slate-400">
         Синдром чистого аркуша переможено. Ти вже у процесі — далі йде легше.
       </p>
+
+      <div className="mt-6 max-w-lg rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Завдання</h2>
+        <p className="mt-2 text-white">{task.trim() || '—'}</p>
+        <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-slate-400">Ключові пункти</h2>
+        <ol className="mt-2 space-y-1">
+          {steps.map((s) => (
+            <li key={s.index} className="text-sm text-slate-300">
+              <span className="font-semibold text-blue-400">{s.index + 1}.</span> {s.title}
+            </li>
+          ))}
+        </ol>
+        <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-slate-400">Тривалість фокусу</h2>
+        <p className="mt-2 text-sm text-slate-300">{duration} хвилин</p>
+        {screenTime.trim() && (
+          <>
+            <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-slate-400">Час на екрані</h2>
+            <p className="mt-2 text-sm text-slate-300">{screenTime.trim()} хвилин</p>
+          </>
+        )}
+      </div>
+
+      <button
+        onClick={onDownload}
+        className="mt-8 rounded-xl border border-white/10 px-6 py-3.5 font-bold text-white transition hover:bg-white/5"
+      >
+        📄 Скачати звіт у файлі
+      </button>
+
       <button
         onClick={onReset}
-        className="mt-8 rounded-xl bg-blue-600 px-6 py-3.5 font-bold text-white transition hover:bg-blue-500 active:scale-[0.98]"
+        className="mt-4 rounded-xl bg-blue-600 px-6 py-3.5 font-bold text-white transition hover:bg-blue-500 active:scale-[0.98]"
       >
         Нове завдання
       </button>

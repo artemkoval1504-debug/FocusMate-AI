@@ -30,6 +30,7 @@ interface GenerateArgs {
   task: string;
   stepIndex: number; // 0-based
   previousSteps: FocusStep[];
+  photo?: string;
 }
 
 /**
@@ -37,18 +38,18 @@ interface GenerateArgs {
  * Tries OpenRouter first; falls back to the local generator on any failure.
  */
 export async function generateStep(args: GenerateArgs): Promise<FocusStep> {
-  const { task, stepIndex, previousSteps } = args;
+  const { task, stepIndex, previousSteps, photo } = args;
   const apiKey = getApiKey();
 
   if (apiKey) {
     try {
-      const step = await generateStepWithOpenRouter(apiKey, task, stepIndex, previousSteps);
+      const step = await generateStepWithOpenRouter(apiKey, task, stepIndex, previousSteps, photo);
       if (step) return step;
     } catch {
       // fall through to local generator
     }
   }
-  return generateStepLocal(task, stepIndex, previousSteps);
+  return generateStepLocal(task, stepIndex, previousSteps, photo);
 }
 
 async function generateStepWithOpenRouter(
@@ -56,6 +57,7 @@ async function generateStepWithOpenRouter(
   task: string,
   stepIndex: number,
   previousSteps: FocusStep[],
+  photo?: string,
 ): Promise<FocusStep | null> {
   const model = 'google/gemini-2.0-flash-exp:free';
 
@@ -64,12 +66,18 @@ async function generateStepWithOpenRouter(
     'Ти — productivity coach. Користувач має складне завдання і страждає від синдрому чистого аркуша. ' +
     'Твоя задача: видати ЛИШЕ ОДНУ конкретну фізичну дію на 10-25 хвилин, яку можна виконати ПРЯМО ЗАРАЗ. ' +
     'Не давай список кроків. Тільки одну дію. Формулюй як фізичну, вимірну дію. ' +
-    'Відповідай українською. Формат: рядок заголовка дії (до 12 слів), потім новий рядок і коротка деталь (до 20 слів).';
+    'Відповідай українською. Формат: рядок заголовка дії (до 12 слів), потім новий рядок і коротка деталь (до 20 слів). ' +
+    (photo ? 'Користувач надав фото завдання (скріншот, план, фото) — використай його як джерело контексту для дії.' : '');
 
   const userPrompt =
     `Завдання: ${task}\n` +
     (doneList ? `Вже зроблено:\n${doneList}\n` : '') +
     `Дай дію №${stepIndex + 1} з 3. Тільки одну.`;
+
+  const content: Array<Record<string, unknown>> = [{ type: 'text', text: userPrompt }];
+  if (photo) {
+    content.push({ type: 'image_url', image_url: { url: photo } });
+  }
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -81,7 +89,7 @@ async function generateStepWithOpenRouter(
       model,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
+        { role: 'user', content },
       ],
       temperature: 0.7,
       max_tokens: 150,
@@ -128,7 +136,23 @@ function shorten(s: string, n: number): string {
   return clean.slice(0, n).trim() + '…';
 }
 
-function generateStepLocal(task: string, stepIndex: number, _previous: FocusStep[]): FocusStep {
+const PHOTO_STEPS: FocusStep[] = [
+  {
+    index: 0,
+    title: 'Візьми з вашого фото один елемент і зробіть із нього перший крок',
+    detail: 'Покажи фото собі: обери один елемент (документ, дата, запис, план) і зроби з нього одну фізичну дію прямо зараз.',
+  },
+];
+
+function generateStepLocal(task: string, stepIndex: number, _previous: FocusStep[], photo?: string): FocusStep {
+  if (photo) {
+    const photoStep = PHOTO_STEPS[0];
+    return {
+      index: photoStep.index,
+      title: photoStep.title,
+      detail: photoStep.detail,
+    };
+  }
   const template = LOCAL_TEMPLATES[stepIndex % LOCAL_TEMPLATES.length];
   return {
     index: stepIndex,
